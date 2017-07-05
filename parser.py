@@ -1,4 +1,5 @@
 import urllib2
+from collections import defaultdict
 
 def GetTagsData(html, tag):
 	begS=0; endS=0; StagD=''; opent={'holder':0}
@@ -11,7 +12,6 @@ def GetTagsData(html, tag):
 			for i in range(1, len(tag)+1):
 				compare +=html[x+i]
 			if tag == compare:
-				print('tag=compare')
 				if (tag in opent)==False:
 					opent[tag]=0
 				opent[tag]+=1
@@ -36,21 +36,21 @@ def GetTagsData(html, tag):
 			Data+=html[x];
 	return Data
 	
-def GetTableRows():
+def GetTableRows(html,rowsC):
 	begS=0; endS=0; StagD=''; opent={'holder':0}
 	begE=0; endE=0; EtagD=''; Data=''
-	canParse=False
+	d = defaultdict(list)
+	canParse=False; rowsI=0
 	myiter = iter(range(1, len(html)))
 	for x in myiter:
 		if html[x]=='<':
 			compare=''
 			for i in range(1, len('td')+1):
 				compare +=html[x+i]
-			if tag == compare:
-				print('tag=compare')
+			if 'td' == compare:
 				if ('td' in opent)==False:
-					opent[tag]=0
-				opent[tag]+=1
+					opent['td']=0
+				opent['td']+=1
 				while html[x]!='>':
 					StagD+=html[x]
 					x+=1
@@ -62,15 +62,23 @@ def GetTableRows():
 			compare=''
 			for i in range(2, len('td')+2):
 				compare +=html[x+i]
-			if tag == compare:
-				opent[tag]-=1
+			if 'td' == compare:
+				opent['td']-=1
 				x=x+i+1
 				while html[x]!='>':
 					x+=1
 				canParse=False
+				if rowsI+1<rowsC:
+					d[rowsI].append(Data)
+					Data=''
+					rowsI+=1
+				else:
+					d[rowsI].append(Data)
+					Data=''
+					rowsI=0
 		if canParse:
 			Data+=html[x];
-	return Data
+	return d
 	
 
 hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
@@ -83,10 +91,18 @@ req = urllib2.Request('https://www.socks-proxy.net/', headers=hdr)
 response = urllib2.urlopen(req)
 html = response.read()
 decision='y'
+f = open('out.txt', 'w')
+f.write('')
+f.close()
+f = open('out.txt', 'a')
 while decision=='y':
 	tag=raw_input("Enter tag: ")
-	tagD=GetTagsData(html,tag)
-	print(tagD)
+	#tagD=GetTagsData(html,tag)
+	tagD=GetTableRows(html,8)
+	for i in range(0, len(tagD[0])):
+		f.write(tagD[4][i].lower()+' '+tagD[0][i]+' '+tagD[1][i]+'\n')
+		print(tagD[4][i].lower()+' '+tagD[0][i]+' '+tagD[1][i])
+		#print(tagD[0][i].lower());
 	decision=raw_input("Parse more? (y/n) ")
 	if decision!='y' and decision!='n':
 		print ("Are U kidding at me?!")
@@ -96,4 +112,4 @@ while decision=='y':
 		exit()
 	else:
 		html=tagD
-
+f.close()
