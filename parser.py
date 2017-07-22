@@ -2,9 +2,9 @@ import urllib2
 from collections import defaultdict
 import checker
 
-def GetTagsData(html, tag, cl):
-	begS=0; endS=0; StagD=''; opent={'holder':0}
-	EtagD=''; Data=''; clM=False;
+def GetTagsData(html, tag, attrs): #returns data between defined open and close tags
+	begS=0; endS=0; StagD=''; opent=dict()
+	EtagD=''; Data=''; attrM=False;
 	canParse=False
 	myiter = iter(range(1, len(html)))
 	for x in myiter:
@@ -12,10 +12,10 @@ def GetTagsData(html, tag, cl):
 			compare=''
 			for i in range(1, len(tag)+1):
 				compare +=html[x+i]
-			print(compare)
+			#print(compare)
 			#print(tag)
 			if tag == compare:
-				print('here')
+				#print('here')
 				if (tag in opent)==False:
 					opent[tag]=0
 				opent[tag]+=1
@@ -24,27 +24,29 @@ def GetTagsData(html, tag, cl):
 					x+=1
 					next(myiter,None)
 					canParse=False
-				print(StagD)
-				if cl!=None:
-					if StagD.find('class=')!=-1:
-						print('ble')
-						if StagD[StagD.find('class=')+6]!="\"" and StagD[StagD.find('class=')+6]!='\'':
-							clCompare=''
-							for ci in range(0,len(cl)):
-								clCompare+=StagD[StagD.find('class=') + 6 + ci]
-							print(StagD[StagD.find('class=')+6])
-							print(clCompare)
-							if clCompare==cl:
-								clM=True
+				#print(StagD)
+				#if len(attrs)>0:
+				for attr in attrs:
+					if StagD.find(attr+"=")!=-1:
+						#print('ble')
+						if StagD[StagD.find(attr+"=")+len(attr+"=")]!="\"" and StagD[StagD.find(attr+"=")+len(attr+"=")]!='\'':
+							attrCompare=''
+							#print attrs
+							for attri in range(0,len(attrs[attr])):
+								attrCompare+=StagD[StagD.find(attr+"=") + len(attr+"=") + attri]
+							#print(StagD[StagD.find(attr+"=")+len(attr+"=")])
+							#print(attrCompare)
+							if attrCompare==attrs[attr]:
+								attrM=True
 						else:
-							clCompare=''
-							for ci in range(0,len(cl)):
-								clCompare+=StagD[StagD.find('class=') + 7 + ci]
-							if clCompare==cl:
-								clM=True
+							attrCompare=''
+							for attri in range(0,len(attrs[attr])):
+								attrCompare+=StagD[StagD.find(attr+"=") + len(attr+"=")+1 + attri]
+							if attrCompare==attrs[attr]:
+								attrM=True
 				else:
-					clM=True
-				if clM:
+					attrM=True
+				if attrM:
 					canParse=True
 				continue
 		if html[x]=='<' and html[x+1]=='/' and canParse:
@@ -62,7 +64,7 @@ def GetTagsData(html, tag, cl):
 	return Data
 	
 	
-def GetTableRows(html,rowsC):
+def GetTableRows(html,rowsC): #return list of lists consists of all table rows
 	begS=0; endS=0; StagD=''; opent={'holder':0}
 	begE=0; endE=0; EtagD=''; Data=''
 	d = defaultdict(list)
@@ -109,9 +111,9 @@ def GetTableRows(html,rowsC):
 def Decode(text):
 	return urllib.unquote(text).decode('utf8')
 
-def CommandRecognize(Mtag, commands):
+def CommandRecognize(Mtag, commands): #Recognize tag input e.g. "table -c SomeClass" or "div --id=SomeId"
 	tdDict={'rws':-1, 'adr':-1, 'port':-1, 'type':-1}
-	AllDict={'c':None, 'id':None}
+	AllDict={}
 	#print("Command = "+command+"\nArg = "+arg)
 	for i in commands:
 		print("Command = "+i+"\nArg = "+commands[i])
@@ -120,10 +122,33 @@ def CommandRecognize(Mtag, commands):
 			if tdDict[i]!=None:
 				tdDict[i]=commands[i]
 		if tdDict[rws]!=-1:
-			table=GetTableRows(html, tdDict[rws])
-			
+			table=GetTableRows(html, tdDict['rws'])
+			SummarizeRows(table, tdDict['addr'], tdDict['port'], tdDict['Ptype'])
 		else:
 			print "Error, wrong/undefined Rows Count"
+	else:
+		for i in commands:
+			AllDict[i]=commands[i]
+		table = GetTagsData(html, Mtag, AllDict)
+		global html
+		html=table
+		print table
+				
+def SummarizeRows(table, addr, port, Ptype): #Format output to file "type address port"
+	f = open('out.txt', 'a')
+	for i in range(0, len(table[1])):
+		if Ptype!=None and Ptype !=-1:
+			if addr!=None and addr!=-1:
+				if port!=None and port!=-1:
+					f.write(table[Ptype][i].lower()+' '+table[addr][i]+' '+table[port][i]+'\n')
+		else:
+			f.write('http'+' '+table[addr][i]+' '+table[port][i]+'\n')
+		#print(table[Ptype][i].lower()+' '+table[addr][i]+' '+table[port][i])
+		#checker.proxyList.append(tagD[0][i]+':'+tagD[1][i])
+		#print(tagD[0][i].lower());
+	#checker.LoopCheck()
+	#print(tagD)
+	f.close()
 	
 def ParseCommand(tag):
 	dictionary=dict()
@@ -186,13 +211,13 @@ hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML,
        'Connection': 'keep-alive'}
 #req = urllib2.Request('https://www.socks-proxy.net/', headers=hdr)
 #req = urllib2.Request('http://freeproxylists.net/', headers=hdr)
-#response = urllib2.urlopen(req)
-#html = response.read()
+req = urllib2.Request('http://useragentstring.com/pages/useragentstring.php?typ=Browser', headers=hdr)
+response = urllib2.urlopen(req)
+html = response.read()
 decision='y'
 f = open('out.txt', 'w')
 f.write('')
 f.close()
-f = open('out.txt', 'a')
 while decision=='y':
 	tag=raw_input("Enter tag: ")
 	ParseCommand(tag)
@@ -213,6 +238,3 @@ while decision=='y':
 	elif decision=='n':
 		print ("Good Bye!)")
 		exit()
-	else:
-		html=tagD
-f.close()
