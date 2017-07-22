@@ -108,7 +108,74 @@ def GetTableRows(html,rowsC):
 
 def Decode(text):
 	return urllib.unquote(text).decode('utf8')
+
+def CommandRecognize(Mtag, commands):
+	tdDict={'rws':-1, 'adr':-1, 'port':-1, 'type':-1}
+	AllDict={'c':None, 'id':None}
+	#print("Command = "+command+"\nArg = "+arg)
+	for i in commands:
+		print("Command = "+i+"\nArg = "+commands[i])
+	if Mtag=='td':
+		for i in commands:
+			if tdDict[i]!=None:
+				tdDict[i]=commands[i]
+		if tdDict[rws]!=-1:
+			table=GetTableRows(html, tdDict[rws])
+			
+		else:
+			print "Error, wrong/undefined Rows Count"
 	
+def ParseCommand(tag):
+	dictionary=dict()
+	tagparsed = False
+	Mtag=''
+	tagiter = iter(range(0, len(tag)))
+	#i=0
+	for i in tagiter:
+		if tagparsed==False and tag[i]!=' ' and i!=len(tag):
+			Mtag+=tag[i]
+			#print(str(i)+" "+tag[i])
+			#next(tagiter)
+			#i+=1
+		else:
+			tagparsed=True
+		if tagparsed:
+			if tag[i]=='-':
+				if tag[i+1]=='-':
+					next(tagiter)
+					command=''
+					while tag[i+2]!='=':
+						command+=tag[i+2]
+						i+=1
+					arg=''
+					while tag[i+3]!=' ':
+						arg+=tag[i+3]
+						if (i+4)!=len(tag):
+							i+=1
+						else:
+							break
+					#CommandRecognize(command, arg)
+					dictionary[command]=arg
+				else:
+					command=''
+					while tag[i+1].isspace()==False and (i+1)!=len(tag):
+						command+=tag[i+1]
+						if tag[i+1]==' ':
+							print "Fucker"
+						next(tagiter, None)
+						i+=1
+					arg=''
+					while tag[i+2].isspace()==False and (i+2)!=len(tag):
+						arg+=tag[i+2]
+						if (i+3)!=len(tag):
+							i+=1
+						else:
+							break
+					#CommandRecognize(command, arg)
+					dictionary[command]=arg
+	print Mtag
+	print dictionary
+	CommandRecognize(Mtag,dictionary)
 	
 
 hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
@@ -118,9 +185,9 @@ hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML,
        'Accept-Language': 'en-US,en;q=0.8',
        'Connection': 'keep-alive'}
 #req = urllib2.Request('https://www.socks-proxy.net/', headers=hdr)
-req = urllib2.Request('http://freeproxylists.net/', headers=hdr)
-response = urllib2.urlopen(req)
-html = response.read()
+#req = urllib2.Request('http://freeproxylists.net/', headers=hdr)
+#response = urllib2.urlopen(req)
+#html = response.read()
 decision='y'
 f = open('out.txt', 'w')
 f.write('')
@@ -128,32 +195,17 @@ f.close()
 f = open('out.txt', 'a')
 while decision=='y':
 	tag=raw_input("Enter tag: ")
-	if tag=='td':
-		tagD=GetTableRows(html,10)
-	else:
-		if tag.find('-c=')!=-1:
-			ti=tag.find('-c=')+3
-			cl=''
-			print(tag+' '+str(len(tag)))
-			while ti<len(tag):
-				print(tag[ti])
-				#print(ti)
-				cl+=tag[ti]
-				print(ti)
-				ti+=1
-		tagi=0; tagS=''
-		while tag[tagi]!=' ':
-			tagS+=tag[tagi]
-			tagi+=1
-		print(tagS+' '+cl)
-		tagD=GetTagsData(html,tagS,cl)
+	ParseCommand(tag)
+		#tagD=GetTableRows(html,10)
+
+		#tagD=GetTagsData(html,tagS,cl)
 	#for i in range(0, len(tagD[1])):
 		#f.write(tagD[2][i].lower()+' '+tagD[0][i]+' '+tagD[1][i]+'\n')
 		#print(tagD[2][i].lower()+' '+tagD[0][i]+' '+tagD[1][i])
 		#checker.proxyList.append(tagD[0][i]+':'+tagD[1][i])
 		#print(tagD[0][i].lower());
 	#checker.LoopCheck()
-	print(tagD)
+	#print(tagD)
 	decision=raw_input("Parse more? (y/n) ")
 	if decision!='y' and decision!='n':
 		print ("Are U kidding at me?!")
