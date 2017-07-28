@@ -116,7 +116,7 @@ def GetTableRows(html,rowsC): #return list of lists consists of all table rows
 					Data=''
 					rowsI+=1
 				else:
-					print "fucker"
+					#print "fucker"
 					d[rowsI].append(Data)
 					Data=''
 					rowsI=0
@@ -186,17 +186,17 @@ def SummarizeRows(table, rowsC, addr, port, Ptype, output, Opath): #Format outpu
 	for i in range(0, len(table[0])-1):
 		if addr!=None and addr!=-1:
 			if port!=None and port !=-1:
-				port=addr+1
+				port=int(addr)+1
 			if Ptype!=None and Ptype!=-1:
-				f.write(table[Ptype][i].lower()+' '+table[addr][i]+' '+table[port][i]+'\n')
+				f.write(table[int(Ptype)][i].lower()+' '+table[int(addr)][i]+' '+table[int(port)][i]+'\n')
 			else:
-				f.write('http'+' '+table[addr][i]+' '+table[port][i]+'\n')
+				f.write('http'+' '+table[int(addr)][i]+' '+table[int(port)][i]+'\n')
 		else:
 			a1=''
 			for x in range(0, int(rowsC)-1):
 				if x+1==int(rowsC)-1:
 					a1+=(str(table[x][i]) +'\n\n')
-					print "fuck"
+					#print "fuck"
 				else:
 					a1+=(str(table[x][i]) +' ')
 			f.write(a1)
